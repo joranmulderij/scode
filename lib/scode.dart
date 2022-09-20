@@ -1,14 +1,9 @@
 import 'package:petitparser/context.dart';
 import 'package:petitparser/parser.dart';
 import 'package:scode/Parser.dart';
-import 'package:scode/ProgramDefinition/Expression/Expression.dart';
-import 'package:scode/ProgramDefinition/Expression/OneParameterOperatorExpression/FunctionCallExpression.dart';
-import 'package:scode/ProgramDefinition/Expression/VariableExpression.dart';
 import 'package:scode/ProgramDefinition/ProgramLine/BlockProgramLine/BlockProgramLine.dart';
 import 'package:scode/ProgramDefinition/ProgramLine/ProgramLine.dart';
 import 'package:scode/ProgramDefinition/Values/IntValue.dart';
-
-import 'ProgramDefinition/ProgramLine/AssignProgramLine.dart';
 import 'ProgramDefinition/ProgramDefinition.dart';
 import 'ProgramDefinition/ProgramLine/BlockProgramLine/TempBlockProgramLine.dart';
 import 'ProgramDefinition/Values/Value.dart';
@@ -22,11 +17,14 @@ void run() {
 // if 2+2
 //     2+2
 //     2+2''');
-  Result result = parser.parse('for i in 0..10:2');
+  Result result = parser.parse('''
+for i in 10000000
+    print(i)''');
   if (result.isSuccess) {
     List<ProgramLine> programLines = result.value;
     List<ProgramLine> newProgramLines = [];
     List<BlockProgramLine> programLineMap = [];
+    int t = 0;
     for (var programLine in programLines) {
       programLineMap = programLineMap.sublist(0, programLine.indent);
       if (programLine.indent == 0) {
@@ -45,7 +43,18 @@ void run() {
         }
       }
     }
-    print(newProgramLines);
+    ProgramDefinition programDefinition = ProgramDefinition(newProgramLines);
+    ProgramEnvironment programEnvironment =
+        ProgramEnvironment(programDefinition, {
+      'print':
+          (List<Value> positionalArguments, Map<String, Value> namedArguments) {
+        // print((positionalArguments[0] as IntValue).value);
+        t += (positionalArguments[0] as IntValue).value;
+        return IntValue(0);
+      },
+    });
+    programEnvironment.execute();
+    print(t);
   } else {
     print(result.message);
     print(result.position);

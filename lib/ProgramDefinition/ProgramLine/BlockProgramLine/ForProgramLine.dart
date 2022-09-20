@@ -1,6 +1,5 @@
 import 'package:scode/ProgramDefinition/Expression/VariableExpression.dart';
 import 'package:scode/ProgramDefinition/ProgramLine/BlockProgramLine/BlockProgramLine.dart';
-import 'package:scode/ProgramDefinition/Values/BoolValue.dart';
 
 import '../../Expression/Expression.dart';
 import '../../ProgramState.dart';

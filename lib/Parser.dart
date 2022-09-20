@@ -6,12 +6,14 @@ import 'package:scode/ProgramDefinition/Expression/TwoParameterOperatorExpressio
 import 'package:scode/ProgramDefinition/Expression/TwoParameterOperatorExpression/TimesOperatorExpression.dart';
 import 'package:scode/ProgramDefinition/Expression/ValueExpression.dart';
 import 'package:scode/ProgramDefinition/Expression/VariableExpression.dart';
+import 'package:scode/ProgramDefinition/ProgramLine/EmptyProgramLine.dart';
 import 'package:scode/ProgramDefinition/ProgramLine/ExpressionProgramLine.dart';
 import 'package:scode/ProgramDefinition/ProgramLine/BlockProgramLine/IfProgramLine.dart';
 import 'package:scode/ProgramDefinition/ProgramLine/BlockProgramLine/TempBlockProgramLine.dart';
 import 'package:scode/ProgramDefinition/Values/IntValue.dart';
 import 'package:scode/ProgramDefinition/Values/StringValue.dart';
 
+import 'ProgramDefinition/Expression/FunctionCallExpression.dart';
 import 'ProgramDefinition/ProgramLine/BlockProgramLine/ForProgramLine.dart';
 import 'ProgramDefinition/ProgramLine/ProgramLine.dart';
 import 'ProgramDefinition/Values/Value.dart';
@@ -20,17 +22,22 @@ class ScodeGrammarDefinition extends GrammarDefinition {
   @override
   Parser<List<ProgramLine>> start() => ref0(program).end();
 
+  // @override
+  // Parser start() => ref0(func).end();
+
   Parser<List<ProgramLine>> program() => ref0(line)
       .separatedBy(char('\n'))
       .map((value) => value.whereType<ProgramLine>().toList());
 
   Parser<ProgramLine> line() => ChoiceParser<ProgramLine>(
-        [ref0(blockStarter), ref0(singleLine)],
+        [ref0(blockStarter), ref0(singleLine), ref0(emptyLine)],
       );
 
-  // Parser emptyLine() => char(' ').star().t();
+  Parser<ProgramLine> emptyLine() =>
+      char(' ').t().star().map((value) => EmptyProgramLine());
 
-  Parser<ProgramLine> blockStarter() => ref0(ifLine);
+  Parser<ProgramLine> blockStarter() =>
+      ChoiceParser([ref0(ifLine), ref0(forLine)]);
 
   Parser<TempBlockProgramLine> ifLine() =>
       (ref0(indent) & string('if ') & ref0(expression)).map((value) =>
@@ -50,10 +57,10 @@ class ScodeGrammarDefinition extends GrammarDefinition {
         Expression max;
         Expression min;
         Expression step;
-        if (value.length == 6) {
+        if (value[5] != null) {
           min = value[4];
           max = value[5][1];
-          if (value[5].length == 3) {
+          if (value[5][2] != null) {
             step = value[5][2][1];
           } else {
             step = ValueExpression(IntValue(1));
@@ -89,6 +96,15 @@ class ScodeGrammarDefinition extends GrammarDefinition {
       .map((value) => DivideOperatorExpression(value[0], value[2]));
 
   Parser<Expression> level3() =>
+      ChoiceParser<Expression>([ref0(func), ref0(level4)]);
+  Parser<Expression> func() => (ref0(level4) &
+          char('(').t() &
+          ref0(expression).separatedBy(char(',').t()) &
+          char(')').t())
+      .map((value) => FunctionCallExpression(
+          value[0], value[2].whereType<Expression>().toList(), {}));
+
+  Parser<Expression> level4() =>
       ChoiceParser<Expression>([ref0(parens), ref0(singleExpression)]);
   Parser<Expression> parens() =>
       (char('(').t() & ref0(level1) & char(')').t()).map((value) => value[1]);
